@@ -9,7 +9,7 @@ function createInlineCompletionElement(input) {
     elem.className = 'ollama-inline-completion';
     elem.style.position = 'absolute';
     elem.style.pointerEvents = 'none';
-    elem.style.zIndex = '1000';
+    elem.style.zIndex = '2147483647';
     elem.style.whiteSpace = 'pre';
     elem.style.opacity = '0.5';
     elem.style.color = '#888888';
@@ -33,7 +33,7 @@ function createBoxCompletionElement(input) {
     elem.className = 'ollama-box-completion';
     elem.style.position = 'absolute';
     elem.style.pointerEvents = 'none';
-    elem.style.zIndex = '1000';
+    elem.style.zIndex = '2147483647';
     elem.style.whiteSpace = 'pre';
     elem.style.background = '#2d2d30';
     elem.style.color = '#cccccc';
@@ -156,15 +156,32 @@ function showInlineCompletion(input, completion, hasSuffix = false) {
             completionElement = createBoxCompletionElement(input);
         }
 
-        const coords = getCaretCoordinates(input);
-
         // position the box centered above the cursor
         completionElement.textContent = completion;
+
+        const coords = getCaretCoordinates(input);
         const boxWidth = completionElement.offsetWidth;
         const boxHeight = completionElement.offsetHeight;
 
-        completionElement.style.left = `${coords.x - boxWidth / 2}px`;
-        completionElement.style.top = `${coords.y - boxHeight - 8}px`;
+        const paddingFromInput = parseFloat(window.getComputedStyle(input).fontSize);
+        const viewportWidth = window.innerWidth;
+
+        let top;
+        if (coords.y >= boxHeight + paddingFromInput) {
+            top = coords.y - boxHeight;
+        } else {
+            top = coords.y + paddingFromInput + 5;
+        }
+
+        let left = coords.x - boxWidth / 2;
+        if (left < 0) {
+            left = 0;
+        } else if (left + boxWidth > viewportWidth) {
+            left = viewportWidth - boxWidth;
+        }
+
+        completionElement.style.left = `${left}px`;
+        completionElement.style.top = `${top}px`;
         completionElement.style.display = 'block';
     } else {
         // show inline completion after cursor when no suffix
@@ -365,11 +382,10 @@ function handleKeyDown(event) {
         hideCompletion();
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         // hide completion on cursor movement
-        setTimeout(() => {
-            if (currentInput) {
-                requestCompletion(currentInput);
-            }
-        }, 10);
+        hideCompletion();
+        if (currentInput) {
+            requestCompletion(currentInput);
+        }
     }
 }
 
@@ -449,8 +465,8 @@ function handleResize() {
     }
 }
 
-document.addEventListener('input', handleInput);
-document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('input', handleInput, true);
+document.addEventListener('keydown', handleKeyDown, true);
 document.addEventListener('blur', (event) => {
     if (event.target === currentInput) {
         hideCompletion();
