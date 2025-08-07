@@ -1,0 +1,43 @@
+.ollama-inline-completion {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    white-space: pre;
+    opacity: 0.5;
+    color: #888888 !important;
+    user-select: none;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+}
+
+.ollama-box-completion {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    white-space: pre;
+    background: #2d2d30 !important;
+    color: #cccccc !important;
+    border: 1px solid #454545 !important;
+    border-radius: 4px !important;
+    padding: 6px 10px !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    font-family: Consolas, Monaco, "Courier New", monospace !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    max-width: 300px !important;
+    word-wrap: break-word !important;
+    user-select: none;
+}
+
+.ollama-inline-completion *,
+.ollama-box-completion * {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+}
