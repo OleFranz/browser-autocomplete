@@ -1,0 +1,21 @@
+[
+    {
+        "id": 1,
+        "priority": 1,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "operation": "remove",
+                    "header": "Origin"
+                }
+            ]
+        },
+        "condition": {
+            "urlFilter": "||localhost:11434/*",
+            "resourceTypes": [
+                "xmlhttprequest"
+            ]
+        }
+    }
+]

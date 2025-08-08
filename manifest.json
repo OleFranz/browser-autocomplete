@@ -5,11 +5,21 @@
     "description": "Text autocomplete for every input or textarea on any website",
     "permissions": [
         "scripting",
-        "activeTab"
+        "activeTab",
+        "declarativeNetRequest"
     ],
     "host_permissions": [
         "http://localhost/*"
     ],
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "remove_origin_rules",
+                "enabled": true,
+                "path": "rules.json"
+            }
+        ]
+    },
     "background": {
         "service_worker": "background.js"
     },
