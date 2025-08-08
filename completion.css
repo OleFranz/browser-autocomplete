@@ -4,7 +4,7 @@
     z-index: 1000;
     white-space: pre;
     opacity: 0.5;
-    color: #888888 !important;
+    color: var(--ollama-inline-color, #ffffff) !important;
     user-select: none;
     background: transparent !important;
     border: none !important;

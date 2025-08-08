@@ -23,6 +23,7 @@ function createInlineCompletionElement(input) {
     elem.style.fontWeight = computedStyle.fontWeight;
     elem.style.lineHeight = computedStyle.lineHeight;
     elem.style.letterSpacing = computedStyle.letterSpacing;
+    elem.style.setProperty('--ollama-inline-color', `${computedStyle.color}`);
 
     document.body.appendChild(elem);
     return elem;
