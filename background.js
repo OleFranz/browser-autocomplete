@@ -14,9 +14,9 @@ async function getCompletion(prefix, suffix) {
                 },
                 body: JSON.stringify({
                     model: 'hf.co/OleFranz/Qwen3-0.6B-Text-FIM-GGUF',
-                    prompt: `<|fim_prefix|>${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`,
+                    prompt: prefix,
+                    suffix: suffix,
                     stream: false,
-                    raw: true,
                     options: {
                         num_predict: 64,
                         temperature: 0.1,
