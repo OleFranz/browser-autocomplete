@@ -92,26 +92,28 @@ function getCaretCoordinates(input) {
         const borderTop = parseInt(computedStyle.borderTopWidth) || 0;
 
         if (input.tagName.toLowerCase() === 'textarea') {
-            const lines = textBeforeCursor.split('\n');
-            const currentLineIndex = lines.length - 1;
-            const currentLineText = lines[currentLineIndex];
+            // get the available text width
+            const textAreaWidth = input.clientWidth - paddingLeft - parseInt(computedStyle.paddingRight || 0);
 
             // create a measuring element for the current line
-            const measurer = document.createElement('span');
+            const measurer = document.createElement('div');
             measurer.style.position = 'absolute';
             measurer.style.visibility = 'hidden';
-            measurer.style.whiteSpace = 'pre';
+            measurer.style.whiteSpace = 'pre-wrap';
+            measurer.style.wordWrap = 'break-word';
+            measurer.style.width = `${textAreaWidth}px`;
             measurer.style.font = computedStyle.font;
             measurer.style.fontSize = computedStyle.fontSize;
             measurer.style.fontFamily = computedStyle.fontFamily;
             measurer.style.fontWeight = computedStyle.fontWeight;
             measurer.style.letterSpacing = computedStyle.letterSpacing;
+            measurer.style.lineHeight = computedStyle.lineHeight;
 
-            measurer.textContent = currentLineText;
+            // add the text up to the cursor position
+            measurer.textContent = textBeforeCursor;
             document.body.appendChild(measurer);
 
-            const textWidth = measurer.offsetWidth;
-
+            // get line height
             let lineHeight = parseInt(computedStyle.lineHeight);
             if (!lineHeight || computedStyle.lineHeight === 'normal') {
                 const lineHeightMeasurer = document.createElement('div');
@@ -128,10 +130,79 @@ function getCaretCoordinates(input) {
                 document.body.removeChild(lineHeightMeasurer);
             }
 
-            document.body.removeChild(measurer);
+            // calculate position using the measured element
+            const measuredHeight = measurer.offsetHeight;
+            const totalLines = Math.max(1, Math.round(measuredHeight / lineHeight));
 
-            x = inputRect.left + borderLeft + paddingLeft + textWidth - (input.scrollLeft || 0);
-            y = inputRect.top + borderTop + paddingTop + (currentLineIndex * lineHeight) - (input.scrollTop || 0);
+            // create a range at the end of the text to get the exact cursor position
+            const range = document.createRange();
+            const textNode = measurer.firstChild;
+            if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                range.setStart(textNode, textNode.textContent.length);
+                range.setEnd(textNode, textNode.textContent.length);
+                const rangeRect = range.getBoundingClientRect();
+                const measurerRect = measurer.getBoundingClientRect();
+
+                // calculate relative position within the measurer
+                const relativeX = rangeRect.left - measurerRect.left;
+                const relativeY = rangeRect.top - measurerRect.top;
+
+                x = inputRect.left + borderLeft + paddingLeft + relativeX - (input.scrollLeft || 0);
+                y = inputRect.top + borderTop + paddingTop + relativeY - (input.scrollTop || 0);
+            } else {
+                // for the last line just measure that lines content
+                const lines = textBeforeCursor.split('\n');
+                let textUpToLastLine = '';
+                for (let i = 0; i < lines.length - 1; i++) {
+                    textUpToLastLine += lines[i] + '\n';
+                }
+
+                // measure up to the start of the last logical line
+                measurer.textContent = textUpToLastLine;
+                const heightToLastLine = measurer.offsetHeight;
+
+                // measure the current line content
+                const currentLineText = lines[lines.length - 1];
+                const lineContentMeasurer = document.createElement('div');
+                lineContentMeasurer.style.position = 'absolute';
+                lineContentMeasurer.style.visibility = 'hidden';
+                lineContentMeasurer.style.whiteSpace = 'pre-wrap';
+                lineContentMeasurer.style.wordWrap = 'break-word';
+                lineContentMeasurer.style.width = `${textAreaWidth}px`;
+                lineContentMeasurer.style.font = computedStyle.font;
+                lineContentMeasurer.style.fontSize = computedStyle.fontSize;
+                lineContentMeasurer.style.fontFamily = computedStyle.fontFamily;
+                lineContentMeasurer.style.fontWeight = computedStyle.fontWeight;
+                lineContentMeasurer.style.letterSpacing = computedStyle.letterSpacing;
+                lineContentMeasurer.style.lineHeight = computedStyle.lineHeight;
+                lineContentMeasurer.textContent = currentLineText;
+                document.body.appendChild(lineContentMeasurer);
+
+                const lineContentHeight = lineContentMeasurer.offsetHeight;
+                const linesInCurrentLogicalLine = Math.max(1, Math.round(lineContentHeight / lineHeight));
+
+                const range2 = document.createRange();
+                const textNode2 = lineContentMeasurer.firstChild;
+                if (textNode2 && textNode2.nodeType === Node.TEXT_NODE) {
+                    range2.setStart(textNode2, textNode2.textContent.length);
+                    range2.setEnd(textNode2, textNode2.textContent.length);
+                    const rangeRect2 = range2.getBoundingClientRect();
+                    const measurerRect2 = lineContentMeasurer.getBoundingClientRect();
+
+                    const relativeX2 = rangeRect2.left - measurerRect2.left;
+                    const relativeY2 = rangeRect2.top - measurerRect2.top;
+
+                    x = inputRect.left + borderLeft + paddingLeft + relativeX2 - (input.scrollLeft || 0);
+                    y = inputRect.top + borderTop + paddingTop + heightToLastLine + relativeY2 - (input.scrollTop || 0);
+                } else {
+                    x = inputRect.left + borderLeft + paddingLeft - (input.scrollLeft || 0);
+                    y = inputRect.top + borderTop + paddingTop + heightToLastLine + (linesInCurrentLogicalLine - 1) * lineHeight - (input.scrollTop || 0);
+                }
+
+                document.body.removeChild(lineContentMeasurer);
+            }
+
+            document.body.removeChild(measurer);
         } else {
             const measurer = document.createElement('span');
             measurer.style.position = 'absolute';
