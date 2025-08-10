@@ -4,6 +4,7 @@ let currentCompletion = '';
 let completionPrefix = '';
 let originalInputStyle = {};
 let extensionEnabled = true;
+let currentRequestId = 0;
 
 // check extension enabled state on load and listen for changes
 chrome.storage.local.get(['extensionEnabled'], (result) => {
@@ -232,6 +233,8 @@ async function requestCompletion(input) {
         return;
     }
 
+    const requestId = ++currentRequestId;
+
     let prefix, suffix;
 
     if (input.isContentEditable) {
@@ -331,7 +334,7 @@ async function requestCompletion(input) {
             suffix
         });
 
-        if (response && response.completion && input === currentInput) {
+        if (requestId === currentRequestId && response && response.completion && input === currentInput) {
             currentCompletion = response.completion;
             completionPrefix = prefix;
 
