@@ -37,11 +37,11 @@ async function preloadModel() {
             const responseText = await response.text();
             const data = JSON.parse(responseText);
             console.log(`Model ${selectedModel} preloaded successfully`);
-        } catch (parseError) {
-            console.error('Failed to preload model');
+        } catch (error) {
+            console.log('Error preloading model:', error);
         }
     } catch (error) {
-        console.error('Error preloading model:', error);
+        console.log('Error preloading model:', error);
     }
 }
 
