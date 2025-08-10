@@ -3,6 +3,22 @@ let currentInput = null;
 let currentCompletion = '';
 let completionPrefix = '';
 let originalInputStyle = {};
+let extensionEnabled = true;
+
+// check extension enabled state on load and listen for changes
+chrome.storage.local.get(['extensionEnabled'], (result) => {
+    extensionEnabled = result.extensionEnabled !== false;
+});
+
+// listen for storage changes
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.extensionEnabled) {
+        extensionEnabled = changes.extensionEnabled.newValue !== false;
+        if (!extensionEnabled) {
+            hideCompletion();
+        }
+    }
+});
 
 function createInlineCompletionElement(input) {
     const elem = document.createElement('div');
@@ -148,7 +164,7 @@ function showInlineCompletion(input, completion, hasSuffix = false) {
         hideCompletion();
         return;
     }
-    
+
     // choose completion style based on whether thers is a suffix text
     if (hasSuffix) {
         // show box completion above cursor when there is a suffix
@@ -210,6 +226,12 @@ function hideCompletion() {
 }
 
 async function requestCompletion(input) {
+    // dont request completion if extension is disabled
+    if (!extensionEnabled) {
+        hideCompletion();
+        return;
+    }
+
     let prefix, suffix;
 
     if (input.isContentEditable) {
@@ -324,10 +346,15 @@ async function requestCompletion(input) {
 }
 
 function handleInput(event) {
+    // dont handle input if extension is disabled
+    if (!extensionEnabled) {
+        return;
+    }
+
     const input = event.target;
     const isEditable = input.tagName.toLowerCase() === 'textarea' ||
-                       input.tagName.toLowerCase() === 'input' ||
-                       input.isContentEditable;
+        input.tagName.toLowerCase() === 'input' ||
+        input.isContentEditable;
     if (!isEditable) {
         return;
     }
@@ -351,7 +378,7 @@ function handleInput(event) {
 }
 
 function handleKeyDown(event) {
-    if (!completionElement || !currentInput) {
+    if (!completionElement || !currentInput || !extensionEnabled) {
         return;
     }
 
@@ -371,8 +398,8 @@ function handleKeyDown(event) {
         } else {
             const cursorPosition = currentInput.selectionStart;
             currentInput.value = currentInput.value.substring(0, cursorPosition) +
-                                 completion +
-                                 currentInput.value.substring(cursorPosition);
+                completion +
+                currentInput.value.substring(cursorPosition);
             currentInput.selectionStart = currentInput.selectionEnd = cursorPosition + completion.length;
         }
 
@@ -384,14 +411,14 @@ function handleKeyDown(event) {
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         // hide completion on cursor movement
         hideCompletion();
-        if (currentInput) {
+        if (currentInput && extensionEnabled) {
             requestCompletion(currentInput);
         }
     }
 }
 
 function handleScroll() {
-    if (completionElement && currentInput) {
+    if (completionElement && currentInput && extensionEnabled) {
         // update position on scroll, need to recalculate suffix for proper display
         let suffix = '';
         if (currentInput.isContentEditable) {
@@ -429,7 +456,7 @@ function handleScroll() {
 }
 
 function handleResize() {
-    if (completionElement && currentInput) {
+    if (completionElement && currentInput && extensionEnabled) {
         // update position on window resize, need to recalculate suffix for proper display
         let suffix = '';
         if (currentInput.isContentEditable) {
@@ -475,10 +502,14 @@ document.addEventListener('blur', (event) => {
     }
 });
 document.addEventListener('focus', (event) => {
+    if (!extensionEnabled) {
+        return;
+    }
+
     const input = event.target;
     const isEditable = input.tagName.toLowerCase() === 'textarea' ||
-                       input.tagName.toLowerCase() === 'input' ||
-                       input.isContentEditable;
+        input.tagName.toLowerCase() === 'input' ||
+        input.isContentEditable;
 
     if (isEditable) {
         // clear any existing completion when focusing a new input
@@ -498,10 +529,14 @@ document.addEventListener('focus', (event) => {
     }
 });
 document.addEventListener('click', (event) => {
+    if (!extensionEnabled) {
+        return;
+    }
+
     const input = event.target;
     const isEditable = input.tagName.toLowerCase() === 'textarea' ||
-                       input.tagName.toLowerCase() === 'input' ||
-                       input.isContentEditable;
+        input.tagName.toLowerCase() === 'input' ||
+        input.isContentEditable;
 
     if (isEditable) {
         // handle clicking on editable elements
@@ -527,7 +562,7 @@ document.addEventListener('scroll', handleScroll, true);
 window.addEventListener('resize', handleResize);
 
 document.addEventListener('selectionchange', () => {
-    if (currentInput && currentInput.isContentEditable) {
+    if (currentInput && currentInput.isContentEditable && extensionEnabled) {
         setTimeout(() => requestCompletion(currentInput), 10);
     }
 });

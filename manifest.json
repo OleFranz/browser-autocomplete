@@ -4,6 +4,7 @@
     "version": "1.0",
     "description": "Text autocomplete for every input or textarea on any website",
     "permissions": [
+        "storage",
         "scripting",
         "activeTab",
         "declarativeNetRequest"
@@ -36,6 +37,10 @@
             ]
         }
     ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Browser Autocomplete"
+    },
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",

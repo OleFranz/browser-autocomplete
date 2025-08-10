@@ -1,19 +1,91 @@
-let ollama_offline_last_check = 0;
+let ollamaOfflineLastCheck = 0;
+
+async function preloadModel() {
+    try {
+        const settings = await chrome.storage.local.get(['apiEndpoint', 'selectedModel', 'preloadModel']);
+
+        if (settings.preloadModel === false) {
+            return;
+        }
+
+        const apiEndpoint = settings.apiEndpoint || 'http://localhost:11434';
+        const selectedModel = settings.selectedModel;
+
+        if (!selectedModel) {
+            return;
+        }
+
+        console.log(`Preloading model: ${selectedModel}`);
+
+        const response = await fetch(`${apiEndpoint}/api/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: selectedModel,
+                prompt: '',
+                suffix: '',
+                stream: false,
+                options: {
+                    num_predict: 1
+                }
+            })
+        });
+
+        try {
+            const responseText = await response.text();
+            const data = JSON.parse(responseText);
+            console.log(`Model ${selectedModel} preloaded successfully`);
+        } catch (parseError) {
+            console.error('Failed to preload model');
+        }
+    } catch (error) {
+        console.error('Error preloading model:', error);
+    }
+}
+
+chrome.runtime.onStartup.addListener(() => {
+    console.log('Chrome started, checking for preload...');
+    preloadModel();
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+    console.log('Extension installed/updated, checking for preload...');
+    preloadModel();
+});
 
 async function getCompletion(prefix, suffix) {
     try {
         console.log(`prefix: '${prefix}'`);
         console.log(`suffix: '${suffix}'`);
 
+        // Get settings from storage
+        const settings = await chrome.storage.local.get(['apiEndpoint', 'selectedModel', 'extensionEnabled']);
+
+        // Check if extension is enabled
+        if (settings.extensionEnabled === false) {
+            console.log('Extension is disabled');
+            return '';
+        }
+
+        const apiEndpoint = settings.apiEndpoint || 'http://localhost:11434';
+        const selectedModel = settings.selectedModel;
+
+        if (!selectedModel) {
+            console.log('No model selected');
+            return '';
+        }
+
         let response;
         try {
-            response = await fetch('http://localhost:11434/api/generate', {
+            response = await fetch(`${apiEndpoint}/api/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: 'hf.co/OleFranz/Qwen3-0.6B-Text-FIM-GGUF',
+                    model: selectedModel,
                     prompt: prefix,
                     suffix: suffix,
                     stream: false,
@@ -25,11 +97,11 @@ async function getCompletion(prefix, suffix) {
                     }
                 })
             });
-        } catch {
-            if (Date.now() - ollama_offline_last_check > 10000) {
-                ollama_offline_last_check = Date.now();
+        } catch (error) {
+            if (Date.now() - ollamaOfflineLastCheck > 10000) {
+                ollamaOfflineLastCheck = Date.now();
                 try {
-                    await fetch('http://localhost:11434');
+                    await fetch(apiEndpoint);
                     throw error;
                 } catch (networkError) {
                     console.log("Ollama not running");

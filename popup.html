@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Autocomplete</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #e0e0e0;
+            --bg-secondary: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --switch-bg: #d1d5db;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #202020;
+            --bg-secondary: #424242;
+            --text-primary: #ffffff;
+            --text-secondary: #acacac;
+            --border-color: #636363;
+            --switch-bg: #696969;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            width: 375px;
+        }
+
+        body.animations-enabled {
+            transition: all 0.3s ease;
+        }
+
+        body.animations-enabled .switch {
+            transition: all 0.2s ease;
+        }
+
+        body.animations-enabled .switch::after {
+            transition: all 0.2s ease;
+        }
+
+        .container {
+            padding: 24px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .switch-group {
+            display: flex;
+            gap: 5px;
+            justify-content: space-between;
+        }
+
+        .switch-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .switch-container:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .switch-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .switch {
+            position: relative;
+            width: 46px;
+            height: 24px;
+            background: var(--switch-bg);
+            border-radius: 14px;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+
+        .switch.active {
+            background: #61d647;
+        }
+
+        .switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch.active::after {
+            transform: translateX(22px);
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            height: 44px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #707070;
+        }
+
+        .input-field:hover {
+            border-color: #707070;
+        }
+
+        .input-field::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .dropdown-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .dropdown-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .dropdown-group {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .dropdown {
+            position: relative;
+            flex: 1;
+        }
+
+        .dropdown select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+            height: 44px;
+        }
+
+        .dropdown select:focus {
+            outline: none;
+            border-color: #707070;
+        }
+
+        .dropdown select:hover {
+            border-color: #707070;
+        }
+
+        .dropdown select:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .refresh-button {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .refresh-button:hover:not(:disabled) {
+            border-color: #7e7e7e;
+            color: var(--text-primary);
+        }
+
+        .refresh-button:active:not(:disabled) {
+            color: var(--text-primary);
+        }
+
+        .refresh-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .refresh-button .refresh-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .refresh-button:hover:not(:disabled) .refresh-icon {
+            transform: rotate(90deg);
+        }
+
+        .refresh-button:active:not(:disabled) .refresh-icon {
+            transform: rotate(180deg);
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid #aaaaaa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .footer-text {
+            color: var(--text-secondary);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .footer-info {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .footer-info p {
+            color: var(--text-secondary);
+            font-size: 11px;
+            line-height: 1.4;
+            opacity: 0.8;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .error .status-indicator {
+            background: #ef4444;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body data-theme="dark">
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Browser Autocomplete</h1>
+        </div>
+
+        <div class="controls">
+            <div class="switch-group">
+                <div class="switch-container">
+                    <span class="switch-label">Extension</span>
+                    <button class="switch active" id="extensionToggle"></button>
+                </div>
+                <div class="switch-container">
+                    <span class="switch-label">Dark Mode</span>
+                    <button class="switch active" id="themeToggle"></button>
+                </div>
+                <div class="switch-container">
+                    <span class="switch-label">Preload Model</span>
+                    <button class="switch active" id="preloadModelToggle"></button>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <label class="input-label" for="apiEndpoint">API Endpoint</label>
+                <input type="url" id="apiEndpoint" class="input-field" placeholder="http://localhost:11434"
+                    value="http://localhost:11434" />
+            </div>
+
+            <div class="dropdown-section">
+                <label class="dropdown-label" for="modelSelect">Ollama Model</label>
+                <div class="dropdown-group">
+                    <div class="dropdown">
+                        <select id="modelSelect">
+                            <option value="">No models found...</option>
+                        </select>
+                    </div>
+                    <button class="refresh-button" id="refreshButton" title="Refresh models">
+                        <svg class="refresh-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        <div class="spinner hidden" id="refreshSpinner"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-text" id="ollamaStatus">
+                <div class="status-indicator"></div>
+                <span>Waiting for Ollama...</span>
+            </div>
+            <div class="footer-info">
+                <p>Only models with infill capability are shown. Some models may be filtered out if they don't support
+                    text completion.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
