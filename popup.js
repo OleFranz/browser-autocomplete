@@ -19,6 +19,7 @@ extensionToggle.addEventListener('click', () => {
     } else {
         extensionToggle.classList.add('active');
         chrome.storage.local.set({ extensionEnabled: true });
+        chrome.runtime.sendMessage({ action: 'preloadModel' });
     }
 });
 
@@ -74,6 +75,7 @@ preloadToggle.addEventListener('click', () => {
     } else {
         preloadToggle.classList.add('active');
         chrome.storage.local.set({ preloadModel: true });
+        chrome.runtime.sendMessage({ action: 'preloadModel' });
     }
 });
 

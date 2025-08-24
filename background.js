@@ -2,9 +2,9 @@ let ollamaOfflineLastCheck = 0;
 
 async function preloadModel() {
     try {
-        const settings = await chrome.storage.local.get(['apiEndpoint', 'selectedModel', 'preloadModel']);
+        const settings = await chrome.storage.local.get(['apiEndpoint', 'selectedModel', 'preloadModel', 'extensionEnabled']);
 
-        if (settings.preloadModel === false) {
+        if (settings.preloadModel === false || settings.extensionEnabled == false) {
             return;
         }
 
@@ -55,15 +55,19 @@ chrome.runtime.onInstalled.addListener(() => {
     preloadModel();
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'preloadModel') {
+        preloadModel();
+    }
+});
+
 async function getCompletion(prefix, suffix) {
     try {
         console.log(`prefix: '${prefix}'`);
         console.log(`suffix: '${suffix}'`);
 
-        // Get settings from storage
         const settings = await chrome.storage.local.get(['apiEndpoint', 'selectedModel', 'extensionEnabled']);
 
-        // Check if extension is enabled
         if (settings.extensionEnabled === false) {
             console.log('Extension is disabled');
             return '';
